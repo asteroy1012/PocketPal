@@ -1,47 +1,39 @@
-import React, { useState } from 'react';
-import SingleExpense from './components/SingleExpense';
-import Dashboard from './components/Dashboard';
-import GroupExpense from './components/GroupExpense';
-import './App.css'; // We will create this for basic styling
+import React, { useState, useEffect } from 'react';
+import LoginPage from './components/LoginPage';
+import MainApp from './components/MainApp';
+import './App.css'; // We will create this file for basic styling
 
 function App() {
-  // State to manage which component is currently visible
-  const [activeView, setActiveView] = useState('single');
+  const [token, setToken] = useState(null);
 
-  const renderView = () => {
-    switch (activeView) {
-      case 'single':
-        return <SingleExpense />;
-      case 'dashboard':
-        return <Dashboard />;
-      case 'group':
-        return <GroupExpense />;
-      default:
-        return <SingleExpense />;
+  // On initial load, check if a token exists in localStorage
+  useEffect(() => {
+    const storedToken = localStorage.getItem('authToken');
+    if (storedToken) {
+      setToken(storedToken);
     }
+  }, []);
+
+  // Callback for when login is successful
+  const handleLogin = (newToken) => {
+    localStorage.setItem('authToken', newToken);
+    setToken(newToken);
+  };
+
+  // Callback for logging out
+  const handleLogout = () => {
+    localStorage.removeItem('authToken');
+    setToken(null);
   };
 
   return (
-    <div className="app-container">
-      <header className="app-header">
-        <h1>Expense Tracker</h1>
-        <nav>
-          {/* Buttons to switch between views */}
-          <button onClick={() => setActiveView('single')} className={activeView === 'single' ? 'active' : ''}>
-            Single Expense
-          </button>
-          <button onClick={() => setActiveView('dashboard')} className={activeView === 'dashboard' ? 'active' : ''}>
-            Dashboard
-          </button>
-          <button onClick={() => setActiveView('group')} className={activeView === 'group' ? 'active' : ''}>
-            Group Expense
-          </button>
-        </nav>
-      </header>
-      <main className="app-main">
-        {/* Render the component based on the activeView state */}
-        {renderView()}
-      </main>
+    <div className="app-root">
+      {/* If there is no token, show the login page. Otherwise, show the main app. */}
+      {!token ? (
+        <LoginPage onLogin={handleLogin} />
+      ) : (
+        <MainApp onLogout={handleLogout} />
+      )}
     </div>
   );
 }

@@ -8,47 +8,42 @@ function SingleExpense() {
 
   const handleFileChange = (event) => {
     setSelectedFile(event.target.files[0]);
-    setMessage(''); // Clear previous messages
+    setMessage('');
   };
 
   const handleUpload = async () => {
-    if (!selectedFile) {
-      setMessage('Please select a file first.');
-      return;
-    }
-
+    if (!selectedFile) return;
     setIsLoading(true);
-    setMessage('Uploading and processing...');
+    setMessage('Processing your bill...');
 
-    // FormData is required for sending files
     const formData = new FormData();
     formData.append('billImage', selectedFile);
+    const token = localStorage.getItem('authToken');
 
     try {
-      // Make sure your backend is running on port 3001
-      const response = await axios.post('http://localhost:3001/api/upload-bill', formData, {
+      const response = await axios.post('http://localhost:3001/api/expenses/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
+          'Authorization': `Bearer ${token}`
         },
       });
-      setMessage(`Success! Expense for ${response.data.vendor} added.`);
-      console.log('Server Response:', response.data);
+      setMessage(`Success! Added expense from ${response.data.vendor} for $${response.data.total_amount}.`);
     } catch (error) {
-      console.error('Error uploading file:', error);
-      setMessage('Upload failed. Please check the console for details.');
+      console.error('Upload failed:', error);
+      setMessage('Upload failed. The bill may not be readable. Please try again.');
     } finally {
       setIsLoading(false);
-      setSelectedFile(null); // Clear the file input after upload
+      setSelectedFile(null);
     }
   };
 
   return (
     <div className="view-container">
-      <h2>Upload a Single Expense</h2>
-      <p>Select an image of a bill or receipt.</p>
+      <h2>Upload a Personal Expense Bill</h2>
+      <p>Upload an image of a bill, and we'll automatically add it to your dashboard.</p>
       <input type="file" onChange={handleFileChange} accept="image/*" />
-      <button onClick={handleUpload} disabled={isLoading}>
-        {isLoading ? 'Processing...' : 'Upload Expense'}
+      <button onClick={handleUpload} disabled={!selectedFile || isLoading}>
+        {isLoading ? 'Processing...' : 'Upload & Process Bill'}
       </button>
       {message && <p className="message">{message}</p>}
     </div>
