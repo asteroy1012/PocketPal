@@ -240,3 +240,74 @@ input {
     background-color: #d4edda;
     border: 1px solid #c3e6cb;
 }
+
+.modal-content.large {
+  max-width: 600px;
+}
+
+/* Style for the scrollable list of items inside the modal */
+.assignment-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+  max-height: 50vh; /* Set a max height to prevent the modal from getting too tall */
+  overflow-y: auto; /* Allow scrolling if the list is long */
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+}
+
+/* Style for each row (item + dropdown) in the assignment list */
+.assignment-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.assignment-item:last-child {
+  border-bottom: none;
+}
+
+/* Style for the dropdown menu to assign users */
+.assignment-item select {
+  padding: 5px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  min-width: 150px; /* Give the dropdown some space */
+}
+
+
+/* --- Styles for the Assignment Notice in the Chat Window --- */
+
+/* Container for the notice that appears in the chat for users */
+.assignment-notice-container {
+  background-color: #e7f3ff; /* A light, noticeable blue */
+  border: 1px solid #90caf9; /* A slightly darker blue border */
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 0.5rem 0;
+}
+
+/* Main "Add to Dashboard" button */
+.add-to-dashboard-btn {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  font-weight: bold;
+  background-color: #28a745; /* Green for a positive action */
+  color: white;
+  border: none;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.add-to-dashboard-btn:hover {
+  background-color: #218838;
+}
+
+/* Style for the button after it has been clicked */
+.add-to-dashboard-btn:disabled {
+  background-color: #6c757d; /* A neutral grey */
+  cursor: not-allowed;
+}

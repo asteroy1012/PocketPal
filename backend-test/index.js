@@ -29,7 +29,7 @@ const upload = multer({ dest: 'uploads/' });
 
 // --- IMPORTANT: Use a current vision model ---
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
+const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
 async function fileToGenerativePart(path, mimeType) {
     return {
@@ -80,26 +80,44 @@ app.post('/api/auth/register', async (req, res) => {
 
 // POST /api/auth/login - Log in a user and get a token
 app.post('/api/auth/login', async (req, res) => {
+    // 1. Destructure email and password from the request body
+    const { email, password } = req.body;
+
     try {
-        const { email, password } = req.body;
+        // 2. Find the user in the database by their unique email
         const result = await pool.query("SELECT * FROM users WHERE email = $1", [email]);
         const user = result.rows[0];
 
+        // 3. If no user is found, send a generic "Invalid credentials" message for security
         if (!user) {
-            return res.status(400).json({ message: 'Invalid credentials.' });
+            return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        const isMatch = await bcrypt.compare(password, user.password_hash);
-        if (!isMatch) {
-            return res.status(400).json({ message: 'Invalid credentials.' });
+        // 4. Compare the submitted password with the hashed password stored in the database
+        const isValid = await bcrypt.compare(password, user.password_hash);
+
+        // 5. If the passwords do not match, send the same generic error message
+        if (!isValid) {
+            return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        // Create JWT
-        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
+        // --- THIS IS THE CORRECTED PART ---
+        // 6. Create the JWT payload, ensuring it includes the username
+        const payload = {
+            id: user.id,
+            username: user.username // This makes the username available on the frontend
+        };
+
+        // 7. Sign the token with your secret key, setting it to expire in 1 day
+        const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+        // 8. Send the token and user details back to the frontend upon successful login
         res.json({ token, userId: user.id, username: user.username });
+
     } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ message: 'Server error during login.' });
+        // 9. If any unexpected server error occurs, log it and send a 500 response
+        console.error('Error during login:', error);
+        res.status(500).json({ message: 'Error logging in', error });
     }
 });
 
@@ -286,6 +304,62 @@ app.post('/api/groups/:groupId/members', authenticateToken, async (req, res) => 
     }
 });
 
+app.post('/api/expenses/add-bulk', authenticateToken, async (req, res) => {
+    // Expects a body like: { "items": [{ "item": "Coffee", "price": 4.50 }], "vendor": "Cafe", "category": "Food" }
+    const { items, vendor, category } = req.body;
+    const userId = req.user.id; // Get the user ID from the authenticated token
+
+    // --- 1. Validation ---
+    if (!items || !Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({ message: "An array of items is required to add." });
+    }
+
+    // --- 2. Database Transaction ---
+    const client = await pool.connect(); // Get a client from the connection pool
+
+    try {
+        // Start the transaction
+        await client.query('BEGIN');
+        console.log(`Starting bulk insert for user ${userId}.`);
+
+        const query = `
+            INSERT INTO personal_expenses (user_id, vendor, category, total_amount, expense_date)
+            VALUES ($1, $2, $3, $4, $5);
+        `;
+
+        // --- 3. Loop and Insert Each Item ---
+        // Use a for...of loop to ensure operations are sequential (important for transactions)
+        for (const item of items) {
+            const values = [
+                userId,
+                vendor || "Group Expense",       // Provide a default vendor if none is specified
+                category || "Group Purchase",    // Provide a default category
+                item.price,
+                new Date()                       // Use the current date for the expense
+            ];
+            await client.query(query, values);
+            console.log(`Inserted item "${item.item}" for user ${userId}.`);
+        }
+
+        // --- 4. Commit the Transaction ---
+        // If all insertions were successful, commit the changes to the database
+        await client.query('COMMIT');
+        console.log(`Bulk insert successful for user ${userId}.`);
+        res.status(201).json({ message: 'Expenses added to your dashboard successfully!' });
+
+    } catch (error) {
+        // --- 5. Rollback on Error ---
+        // If any error occurred during the try block, roll back all changes
+        await client.query('ROLLBACK');
+        console.error('Error in bulk adding expenses, transaction rolled back:', error);
+        res.status(500).json({ message: 'Failed to add expenses due to a server error.' });
+    } finally {
+        // --- 6. Release the Client ---
+        // ALWAYS release the client back to the pool, whether the transaction succeeded or failed
+        client.release();
+    }
+});
+
 // --- SECTION: HTTP SERVER & SOCKET.IO SETUP ---
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -296,36 +370,72 @@ const io = new Server(server, {
 });
 
 // --- SECTION: REAL-TIME CHAT LOGIC ---
+const userSocketMap = {};
+
 io.on('connection', (socket) => {
-    console.log('A user connected:', socket.id);
+    console.log('A user connected with socket id:', socket.id);
 
-    // When a user joins a group's chat window
-    socket.on('joinRoom', ({ groupId }) => {
+    // MODIFIED: 'joinRoom' now reliably tracks the user with a STRING key
+    socket.on('joinRoom', ({ groupId, userId }) => {
         socket.join(groupId);
-        console.log(`User ${socket.id} joined room ${groupId}`);
+        // Coerce userId to a string to ensure consistent key types for lookups
+        userSocketMap[String(userId)] = socket.id;
+        console.log(`User ${userId} (Socket ${socket.id}) joined group ${groupId}`);
+        // Log the current state of the map whenever someone joins
+        console.log('UPDATED userSocketMap:', userSocketMap);
     });
 
-    // When a user sends a regular message
+    // UNCHANGED: Normal messages are correctly broadcast to the entire group
     socket.on('sendMessage', ({ groupId, message, username }) => {
-        // Broadcast the message to everyone else in the room
-        socket.to(groupId).emit('message', { user: username, text: message });
-    });
-
-    // When a user sends a bill split request after confirming items
-    socket.on('sendSplitRequest', ({ groupId, items, username }) => {
-        const requestPayload = {
-            type: 'splitRequest',
+        io.to(groupId).emit('message', {
+            type: 'text',
             user: username,
-            items: items,
-            id: Date.now() // Unique ID for the request
-        };
-        // Broadcast the request to everyone in the room (including the sender)
-        io.to(groupId).emit('message', requestPayload);
+            text: message,
+            id: Date.now()
+        });
     });
 
+    // MODIFIED: Added detailed logging for debugging
+    socket.on('sendAssignments', ({ groupId, assignments, username }) => {
+        console.log('--- Received sendAssignments event ---');
+        console.log('Assignments Payload:', assignments);
+        console.log('Current userSocketMap state:', userSocketMap);
 
+        for (const userId in assignments) { // 'userId' here is a string
+            const assignedItems = assignments[userId];
+            
+            console.log(`Attempting to find socket for userId: "${userId}" (type: ${typeof userId})`);
+            
+            // Look up the socket ID from our reliable server-side map using a string key
+            const targetSocketId = userSocketMap[userId];
+
+            if (targetSocketId) {
+                console.log(`SUCCESS: Found socket ${targetSocketId} for user ${userId}. Sending notice.`);
+                // Send a private, personalized message ONLY to that user's socket
+                io.to(targetSocketId).emit('message', {
+                    type: 'assignmentNotice',
+                    fromUser: username,
+                    items: assignedItems,
+                    id: `assign-${Date.now()}-${userId}`
+                });
+            } else {
+                // This is the error point. The logs above will tell us why.
+                console.error(`FAILURE: Could not find an active socket for user ${userId}. They may not be in the chat window.`);
+            }
+        }
+    });
+
+    // MODIFIED: Clean up the map correctly when a user disconnects
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
+        for (const userId in userSocketMap) { // 'userId' here is a string
+            if (userSocketMap[userId] === socket.id) {
+                delete userSocketMap[userId];
+                console.log(`Removed user ${userId} from userSocketMap.`);
+                console.log('UPDATED userSocketMap:', userSocketMap);
+                break;
+            }
+        }
     });
 });
 

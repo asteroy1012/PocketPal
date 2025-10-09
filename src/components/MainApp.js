@@ -24,7 +24,7 @@ function MainApp({ onLogout }) {
   return (
     <div className="app-container">
       <header className="app-header">
-        <h1>Expense Tracker</h1>
+        <h1>PocketPal</h1>
         <nav>
           <button onClick={() => setActiveView('dashboard')}>Dashboard</button>
           <button onClick={() => setActiveView('single_expense')}>Add Expense</button>
