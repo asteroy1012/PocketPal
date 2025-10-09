@@ -68,3 +68,40 @@ This section has moved here: [https://facebook.github.io/create-react-app/docs/d
 ### `npm run build` fails to minify
 
 This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+
+PostGreSQL codes for creating the necessary tables under the database name PocketPal
+Follow this for PostGreSQL:
+-- 1. Create the 'users' table to store login information
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 2. Create the 'groups' table
+CREATE TABLE groups (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    created_by INTEGER REFERENCES users(id), -- Links to the user who created it
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 3. Create the 'group_members' table to link users and groups
+-- This table establishes the many-to-many relationship
+CREATE TABLE group_members (
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    group_id INTEGER REFERENCES groups(id) ON DELETE CASCADE,
+    joined_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, group_id) -- Ensures a user can't join the same group twice
+);
+
+
+-- 4. IMPORTANT: Modify your existing 'expenses' table
+-- First, rename it to 'personal_expenses'
+ALTER TABLE expenses RENAME TO personal_expenses;
+
+-- Second, add a column to link each expense to a user
+ALTER TABLE personal_expenses ADD COLUMN user_id INTEGER REFERENCES users(id);
+
