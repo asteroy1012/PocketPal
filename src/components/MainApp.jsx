@@ -22,15 +22,17 @@ function MainApp({ onLogout }) {
   };
 
   return (
-    <div className="app-container">
-      <header className="app-header">
-        <h1>PocketPal</h1>
-        <nav>
-          <button onClick={() => setActiveView('dashboard')}>Dashboard</button>
-          <button onClick={() => setActiveView('single_expense')}>Add Expense</button>
-          <button onClick={() => setActiveView('groups')}>Groups</button>
+    <div className="p-5 mt-5 flex flex-col gap-5">
+      <header className="flex flex-row outline-2 outline-red-100 p-2 rounded-xl bg-white">
+        <h1 className='basis-1/3 font-bold text-5xl'>PocketPal</h1>
+        
+        <nav className='basis-1/3 flex flex-row gap-4'>
+          <button className='basis-1/3' onClick={() => setActiveView('dashboard')}>Dashboard</button>
+          <button className = 'basis-1/3' classNameonClick={() => setActiveView('single_expense')}>Add Expense</button>
+          <button className = 'basis-1/3' onClick={() => setActiveView('groups')}>Groups</button>
         </nav>
-        <button onClick={onLogout} className="logout-button">Logout</button>
+        <div className='basis-1/3 p-2 flex justify-end'><button onClick={onLogout} className="">Logout</button></div>
+        
       </header>
       <main className="app-main">
         {renderView()}
