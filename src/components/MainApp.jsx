@@ -5,47 +5,51 @@ import GroupsPage from './GroupsPage';
 import Lottie from 'react-lottie';
 import Wallet from '../Wallet.json';
 
-function MainApp({ onLogout }) {
+// --- CHANGE 1: Accept the 'user' prop ---
+function MainApp({ user, onLogout }) {
   // State to manage which view is currently active
   const [activeView, setActiveView] = useState('dashboard');
 
   const defaultOptions = {
-  loop: true,
-  autoplay: true,
-  animationData: Wallet, // The animation data goes here
-  rendererSettings: {
-    preserveAspectRatio: 'xMidYMid slice'
-  }
-};
+    loop: true,
+    autoplay: true,
+    animationData: Wallet,
+    rendererSettings: {
+      preserveAspectRatio: 'xMidYMid slice'
+    }
+  };
 
-  // Function to render the correct component based on the active view
+  // --- CHANGE 2: Pass the 'user' prop down to child components ---
   const renderView = () => {
     switch (activeView) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard user={user} />;
       case 'single_expense':
-        return <SingleExpense />;
+        return <SingleExpense user={user} />;
       case 'groups':
-        return <GroupsPage />;
+        return <GroupsPage user={user} />;
       default:
-        return <Dashboard />;
+        return <Dashboard user={user} />;
     }
   };
 
   return (
-    <div className="p-5 mt-5 flex flex-col gap-5">
-      <header className="flex flex-row outline-2 outline-red-100 p-2 rounded-xl bg-white">
+    <div className="p-3 flex flex-col gap-5">
+      <header className="flex flex-row items-center outline-2 outline-white p-2 rounded-xl bg-white h-[6rem]">
         <div className='basis-1/3 flex flex-row'>
-        <div className='basis-1/2 font-bold text-5xl flex justify-center items-center  '>PocketPal</div>
-        <div className='basis-1/2'><Lottie options={defaultOptions} height={75} width={75}/></div>
+          <div className='basis-1/2 font-bold text-5xl flex justify-center items-center'>PocketPal</div>
+          <div className='basis-1/2 flex justify-center items-center'><Lottie options={defaultOptions} height={75} width={75} /></div>
         </div>
         
-        <nav className='basis-1/3 flex flex-row gap-4'>
-          <button className='basis-1/3' onClick={() => setActiveView('dashboard')}>Dashboard</button>
-          <button className = 'basis-1/3' classNameonClick={() => setActiveView('single_expense')}>Add Expense</button>
-          <button className = 'basis-1/3' onClick={() => setActiveView('groups')}>Groups</button>
-        </nav>
-        <div className='basis-1/3 p-2 flex justify-end'><button onClick={onLogout} className="">Logout</button></div>
+        <div className='basis-1/3 flex flex-row gap-4 justify-center items-center p-2'>
+          <button className='basis-1/3 h-[3rem] rounded-xl outline-offset-2 outline-sky-500 focus:outline-2' onClick={() => setActiveView('dashboard')}>Dashboard</button>
+          <button className='basis-1/3 h-[3rem] rounded-xl outline-offset-2 outline-sky-500 focus:outline-2' onClick={() => setActiveView('single_expense')}>Add Expense</button>
+          <button className='basis-1/3 h-[3rem] rounded-xl outline-offset-2 outline-sky-500 focus:outline-2' onClick={() => setActiveView('groups')}>Groups</button>
+        </div>
+
+        <div className='basis-1/3 p-2 flex justify-end items-center'>
+          <button onClick={onLogout} className="h-[3rem] w-[5rem]">Logout</button>
+        </div>
         
       </header>
       <main className="app-main">
