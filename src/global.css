@@ -1,0 +1,45 @@
+/* Add Tailwind's base styles */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Define the custom cursor styles on the 'html' element.
+  This makes the "cozy pointer" the default cursor for your entire application.
+*/
+html {
+  cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><path fill="rgba(0,0,0,0.8)" d="M2,2 L26,16 L2,30 Z"/></svg>'), auto;
+}
+
+/* Define the larger I-beam cursor as a reusable utility class.
+  You can add 'big-text-cursor' to any input field in your project.
+*/
+.big-text-cursor {
+  cursor: url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2232%22%20height%3D%2232%22%20viewBox%3D%220%200%2032%22%22%3E%3Cpath%20stroke%3D%22rgba(0%2C0%2C0%2C0.8)%22%20stroke-width%3D%223%22%20d%3D%22M16%2C4%20V28%20M10%2C4%20H22%20M10%2C28%20H22%22%2F%3E%3C%2Fsvg%3E'), text;
+}
+
+/* --- NEW: Typewriter Animation --- */
+@layer utilities {
+  .typewriter-text {
+    overflow: hidden; /* Ensures the text is not revealed until the animation */
+    border-right: .05em solid rgb(0, 0, 0); /* The typewriter caret */
+    white-space: nowrap; /* Keeps the content on a single line */
+    /* MODIFIED: Reduced letter spacing */
+    letter-spacing: .01em; 
+    animation:
+      /* MODIFIED: Faster animation duration */
+      typing 2s steps(40, end) infinite,
+      blink-caret .75s step-end infinite;
+  }
+}
+
+/* The typing effect */
+@keyframes typing {
+  from { width: 0 }
+  to { width: 100% }
+}
+
+/* The typewriter cursor effect */
+@keyframes blink-caret {
+  from, to { border-color: transparent }
+  50% { border-color: orange; }
+}

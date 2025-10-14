@@ -48,7 +48,7 @@ function MainApp({ user, onLogout }) {
         </div>
 
         <div className='basis-1/3 p-2 flex justify-end items-center'>
-          <button onClick={onLogout} className="h-[3rem] w-[5rem]">Logout</button>
+          <button onClick={onLogout} className="h-[3rem] w-[5rem] rounded-xl">Logout</button>
         </div>
         
       </header>

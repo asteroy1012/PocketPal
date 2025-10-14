@@ -125,17 +125,19 @@ function GroupDetail({ group, onBack }) {
         {/* Add Member Card */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Add New Member</h3>
-          <div className="relative">
+          <div className="relative flex justify-center items-center flex-row gap-2 ">
             <input
               type="text"
               placeholder="Search by username..."
               value={searchTerm}
               onChange={handleSearch}
-              className="w-full p-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 pl-10"
             />
-            <svg className="h-5 w-5 text-gray-400 absolute top-1/2 left-3 transform -translate-y-1/2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <div className='rounded-xl bg-sky-500 w-10 h-10 flex justify-center items-center'>
+            <svg className="h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
             </svg>
+            </div>
           </div>
           <ul className="mt-4 space-y-2 max-h-48 overflow-y-auto">
             {searchResults.map(user => (
